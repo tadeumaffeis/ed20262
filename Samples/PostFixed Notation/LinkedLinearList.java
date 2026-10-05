@@ -1,16 +1,19 @@
 import java.util.Objects;
 
 /**
- * Representa uma lista linear duplamente encadeada com capacidade fixa.
+ * Representa uma lista linear duplamente encadeada com descritor e capacidade fixa.
  *
  * @param <T> tipo dos elementos armazenados na lista
  */
 public class LinkedLinearList<T> {
-    /** Primeiro no da lista. */
-    private Node<T> head;
-    /** Quantidade atual de elementos armazenados. */
-    private int size;
-    /** Quantidade máxima de elementos permitida. */
+
+
+
+    private final Descriptor<T> descritor = new Descriptor<>();
+
+    /**
+     * Quantidade máxima de elementos permitida.
+     */
     private final int capacity;
 
     /**
@@ -23,8 +26,6 @@ public class LinkedLinearList<T> {
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity cannot be negative");
         }
-        this.head = null;
-        this.size = 0;
         this.capacity = capacity;
     }
 
@@ -32,20 +33,20 @@ public class LinkedLinearList<T> {
      * Verifica se a lista não contém elementos.
      *
      * @return {@code true} se a lista estiver vazia; caso contrário,
-     *         {@code false}
+     * {@code false}
      */
     public boolean isEmpty() {
-        return size == 0;
+        return descritor.getSize() == 0;
     }
 
     /**
      * Verifica se a lista atingiu sua capacidade máxima.
      *
      * @return {@code true} se a lista estiver cheia; caso contrário,
-     *         {@code false}
+     * {@code false}
      */
     public boolean isFull() {
-        return size == capacity;
+        return descritor.getSize() == capacity;
     }
 
     /**
@@ -54,7 +55,7 @@ public class LinkedLinearList<T> {
      * @return número de elementos armazenados
      */
     public int size() {
-        return size;
+        return descritor.getSize();
     }
 
     /**
@@ -62,10 +63,10 @@ public class LinkedLinearList<T> {
      *
      * @param value elemento a ser adicionado
      * @return {@code true} se o elemento for adicionado; {@code false} se a
-     *         lista estiver cheia
+     * lista estiver cheia
      */
     public boolean add(T value) {
-        return insert(size, value);
+        return insert(descritor.getSize(), value);
     }
 
     /**
@@ -75,17 +76,16 @@ public class LinkedLinearList<T> {
      */
     @Override
     public String toString() {
-        System.out.print("[");
-        Node<T> current = head;
+        StringBuilder result = new StringBuilder("[");
+        Node<T> current = descritor.getInicio();
         while (current != null) {
-            System.out.print(current.getValue());
+            result.append(current.getValue());
             current = current.getNext();
             if (current != null) {
-                System.out.print(", ");
+                result.append(", ");
             }
         }
-        System.out.print("]");
-        return "";
+        return result.append("]").toString();
     }
 
     /**
@@ -113,7 +113,7 @@ public class LinkedLinearList<T> {
      * @return índice da primeira ocorrência ou {@code -1} se não encontrado
      */
     public int search(T value) {
-        Node<T> current = head;
+        Node<T> current = descritor.getInicio();
         int position = 0;
 
         while (current != null) {
@@ -131,8 +131,8 @@ public class LinkedLinearList<T> {
      * Insere um elemento no início da lista.
      *
      * @param value elemento a ser inserido
-     * @return {@code true} se o elemento for inserido; {@code false} se a
-     *         lista estiver cheia
+     * @return {@code true} se o elemento for inserido; {@code false} se a lista
+     * estiver cheia
      */
     public boolean insertAtBeginning(T value) {
         return insert(0, value);
@@ -143,21 +143,29 @@ public class LinkedLinearList<T> {
      *
      * @param position índice no qual o elemento será inserido
      * @param value elemento a ser inserido
-     * @return {@code true} se o elemento for inserido; {@code false} se a
-     *         lista estiver cheia ou a posição for inválida
+     * @return {@code true} se o elemento for inserido; {@code false} se a lista
+     * estiver cheia ou a posição for inválida
      */
     public boolean insert(int position, T value) {
-        if (isFull() || position < 0 || position > size) {
+        if (isFull() || position < 0 || position > descritor.getSize()) {
             return false;
         }
 
         Node<T> newNode = new Node<>(position, value);
         if (position == 0) {
-            newNode.setNext(head);
-            if (head != null) {
-                head.setPrev(newNode);
+            newNode.setNext(descritor.getInicio());
+            if (descritor.getInicio() != null) {
+                descritor.getInicio().setPrev(newNode);
             }
-            head = newNode;
+            descritor.setInicio(newNode);
+            if (descritor.getSize() == 0) {
+                descritor.setFim(newNode);
+            }
+        } else if (position == descritor.getSize()) {
+            // O descritor permite inserir no final sem percorrer a lista.
+            newNode.setPrev(descritor.getFim());
+            descritor.getFim().setNext(newNode);
+            descritor.setFim(newNode);
         } else {
             Node<T> previous = nodeAt(position - 1);
             Node<T> next = previous.getNext();
@@ -169,7 +177,7 @@ public class LinkedLinearList<T> {
             }
         }
 
-        size++;
+        descritor.setSize(descritor.getSize() + 1);
         return true;
     }
 
@@ -190,7 +198,7 @@ public class LinkedLinearList<T> {
      * @throws OperationFailed se a lista estiver vazia
      */
     public T removeLast() throws OperationFailed {
-        return remove(size - 1);
+        return remove(descritor.getSize() - 1);
     }
 
     /**
@@ -207,15 +215,20 @@ public class LinkedLinearList<T> {
         Node<T> next = node.getNext();
 
         if (previous == null) {
-            head = next;
+            descritor.setInicio(next);
         } else {
             previous.setNext(next);
         }
-        if (next != null) {
+        if (next == null) {
+            descritor.setFim(previous);
+        } else {
             next.setPrev(previous);
         }
 
-        size--;
+        node.setPrev(null);
+        node.setNext(null);
+
+        descritor.setSize(descritor.getSize() - 1);
         return node.getValue();
     }
 
@@ -226,7 +239,7 @@ public class LinkedLinearList<T> {
      * @throws OperationFailed se a posição não corresponder a um elemento
      */
     private void validatePosition(int position) throws OperationFailed {
-        if (position < 0 || position >= size) {
+        if (position < 0 || position >= descritor.getSize()) {
             throw new OperationFailed();
         }
     }
@@ -239,14 +252,88 @@ public class LinkedLinearList<T> {
      * @throws IndexOutOfBoundsException se a posição for inválida
      */
     private Node<T> nodeAt(int position) {
-        if (position < 0 || position >= size) {
+        if (position < 0 || position >= descritor.getSize()) {
             throw new IndexOutOfBoundsException("Invalid position: " + position);
         }
 
-        Node<T> current = head;
-        for (int index = 0; index < position; index++) {
-            current = current.getNext();
+        Node<T> current;
+        // Percorre a partir da extremidade mais próxima da posição.
+        if (position < descritor.getSize() / 2) {
+            current = descritor.getInicio();
+            for (int index = 0; index < position; index++) {
+                current = current.getNext();
+            }
+        } else {
+            current = descritor.getFim();
+            for (int index = descritor.getSize() - 1; index > position; index--) {
+                current = current.getPrev();
+            }
         }
         return current;
+    }
+
+    /**
+     * Calcula o somatório dos elementos numéricos da lista.
+     *
+     * @return soma dos elementos
+     * @throws IllegalStateException se algum elemento não for numérico
+     */
+    public float sum() {
+        float sum = 0.0f;
+        Node<T> current = descritor.getInicio();
+
+        while (current != null) {
+            if (!(current.getValue() instanceof Number)) {
+                throw new IllegalStateException(
+                        "The list contains a non-numeric element"
+                );
+            }
+
+            sum += ((Number) current.getValue()).floatValue();
+            current = current.getNext();
+        }
+
+        return sum;
+    }
+
+    /**
+     * Calcula o produtório dos elementos numéricos da lista.
+     *
+     * @return produto dos elementos
+     * @throws IllegalStateException se algum elemento não for numérico
+     */
+    public float product() {
+        float product = 1.0f;
+        Node<T> current = descritor.getInicio();
+
+        while (current != null) {
+            if (!(current.getValue() instanceof Number)) {
+                throw new IllegalStateException(
+                        "The list contains a non-numeric element"
+                );
+            }
+
+            product *= ((Number) current.getValue()).floatValue();
+            current = current.getNext();
+        }
+
+        return product;
+    }
+
+    /**
+     * Calcula a média aritmética simples dos elementos numéricos da lista.
+     *
+     * @return média aritmética dos elementos
+     * @throws IllegalStateException se a lista estiver vazia ou contiver
+     * elemento não numérico
+     */
+    public float average() {
+        if (isEmpty()) {
+            throw new IllegalStateException(
+                    "Cannot calculate the average of an empty list"
+            );
+        }
+
+        return sum() / descritor.getSize();
     }
 }
