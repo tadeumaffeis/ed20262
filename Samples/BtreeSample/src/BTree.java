@@ -10,9 +10,12 @@
 public class BTree<T> {
 
     private NodeTree<T> root;
+    private int size;
+    private T[] array;
 
     public BTree() {
         this.root = null;
+        this.size = 0;
     }
 
     public boolean empty() {
@@ -21,6 +24,7 @@ public class BTree<T> {
 
     public void add(NodeTree<T> node) {
         this.root = this.addNode(this.root, node);
+        size++;
     }
 
     private NodeTree<T> addNode(NodeTree<T> root, NodeTree<T> newNode) {
@@ -51,4 +55,43 @@ public class BTree<T> {
         System.out.println("\t".repeat(times) + ((Integer)root.getInfo()).intValue() + ".");   
         showTree(root.getRight(), times + 1);
     }
+
+    private int height(NodeTree<T> root)
+    {
+        if (root == null)
+        {
+            return 0;
+        }
+        int left = height(root.getLeft());
+        int right = height(root.getRight());
+
+        return Math.max(left, right) + 1;
+    }
+
+    public int height()
+    {
+        return height(root);
+    }
+
+    @SuppressWarnings("unchecked")
+    public T[] toArray()
+    {
+        this.array = (T[])new Object[size];
+        
+        toArray(this.root, 0);
+
+        return (T[])this.array;
+    }
+
+    private int toArray(NodeTree<T> root, int index)
+    {
+        if (root == null)
+        {
+            return index;
+        }
+        index = toArray(root.getLeft(), index);
+        this.array[index] = root.getInfo();
+        return toArray(root.getRight(), index + 1);
+    }
+
 }

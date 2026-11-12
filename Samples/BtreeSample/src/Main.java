@@ -19,6 +19,12 @@ public class Main {
             value = in.nextInt();
         }
         btree.show();
+        System.out.println("Altura: " + btree.height());
+        Object[] array = btree.toArray();
+        for (int i=0; i < array.length; i++)
+        {
+            System.out.printf("[%d] = %d", i, (Integer)array[i]);
+        }
     }
 
 }
